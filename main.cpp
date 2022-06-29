@@ -15,57 +15,6 @@ namespace Random{
     std::mt19937_64 mt{ seedSeq };
 }
 
-// enums
-
-enum class Suit{
-    clubs,
-    diamonds,
-    hearts,
-    spades,
-
-    max_suits
-};
-
-enum class Rank{
-    two,
-    three,
-    four,
-    five,
-    six,
-    seven,
-    eight,
-    nine,
-    ten,
-    jack,
-    queen,
-    king,
-    ace,
-
-    max_ranks
-};
-
-enum class EndState{
-    win,
-    loss,
-    tie
-};
-
-struct Card{
-    Suit suit{};
-    Rank rank {};
-};
-
-struct Participant{
-    std::string_view name{};
-    std::vector<Card> hand{};
-    int score{};
-};
-
-// aliases
-
-using deck_t = std::array<Card, g_totalCardsInDeck>;
-using arrayIndex_t = deck_t::size_type;
-
 // Templates
 
 template <typename T>
@@ -87,210 +36,271 @@ inline T getFromUser(const std::string_view prompt){
     return userResponse;
 }
 
-// Functions
+// enums
 
-char toChar(Suit suit){
-    switch (suit)
-    {
-        case Suit::clubs: return 'C';
-        case Suit::diamonds: return 'D';
-        case Suit::hearts: return 'H';
-        case Suit::spades: return 'S';    
-        default: return '?';
-    }
-}
+enum class EndState{
+    win,
+    loss,
+    tie
+};
 
-char toChar(Rank rank){
-    switch(rank){
-        case Rank::two: return '2';
-        case Rank::three: return '3';
-        case Rank::four: return '4';
-        case Rank::five: return '5';
-        case Rank::six: return '6';
-        case Rank::seven: return '7';
-        case Rank::eight: return '8';
-        case Rank::nine: return '9';
-        case Rank::ten: return 'T';
-        case Rank::jack: return 'J';
-        case Rank::queen: return 'Q';
-        case Rank::king: return 'K';
-        case Rank::ace: return 'A';
-        default: return '?';
-    }
-}
+// Classes
 
-std::string toString(const Card& card){
-    std::string string{};
-    string += toChar(card.rank);
-    string += toChar(card.suit);
-    return string;
-}
+class Card{
+public:
 
-void printCard(const Card& card){
-    std::cout << toString(card) << ' ';
-}
+    enum class Suit{
+        clubs,
+        diamonds,
+        hearts,
+        spades,
 
-deck_t createDeck(){
+        max_suits
+    };
 
-    deck_t deck{};
+    enum class Rank{
+        two,
+        three,
+        four,
+        five,
+        six,
+        seven,
+        eight,
+        nine,
+        ten,
+        jack,
+        queen,
+        king,
+        ace,
 
-    arrayIndex_t cardNumber{ 0 };
-    const int maxRanks{ static_cast<int>(Rank::max_ranks) };
-    for(int s{ 0 }; s<static_cast<int>(Suit::max_suits); ++s){
-        for(int r{ 0 }; r<maxRanks; ++r){
-            deck.at(cardNumber).rank = static_cast<Rank>(r);
-            deck.at(cardNumber).suit = static_cast<Suit>(s);
-            ++cardNumber;
+        max_ranks
+    };
+
+private:
+
+    Rank m_rank{ Rank::two };
+    Suit m_suit{ Suit::clubs };
+
+    char toChar(Suit suit) const{
+        switch (suit)
+        {
+            case Suit::clubs: return 'C';
+            case Suit::diamonds: return 'D';
+            case Suit::hearts: return 'H';
+            case Suit::spades: return 'S';    
+            default: return '?';
         }
     }
 
-    return deck;
-}
-
-void shuffleDeck(deck_t& deck){
-    std::shuffle(deck.begin(), deck.end(), Random::mt);
-}
-
-int getCardValue(const Card& card){
-    int enumValue{ static_cast<int>(card.rank) };
-    if(enumValue<9){        
-        // 2-9 are worth their face value
-        return enumValue+2;
+    char toChar(Rank rank) const{
+        switch(rank){
+            case Rank::two: return '2';
+            case Rank::three: return '3';
+            case Rank::four: return '4';
+            case Rank::five: return '5';
+            case Rank::six: return '6';
+            case Rank::seven: return '7';
+            case Rank::eight: return '8';
+            case Rank::nine: return '9';
+            case Rank::ten: return 'T';
+            case Rank::jack: return 'J';
+            case Rank::queen: return 'Q';
+            case Rank::king: return 'K';
+            case Rank::ace: return 'A';
+            default: return '?';
+        }
     }
-    if(enumValue == static_cast<int>(Rank::ace)){
-        // ace is worth 11
-        return 11;
+
+public:
+
+    Card() = default;
+    Card(Rank rank, Suit suit) : m_rank{ rank }, m_suit{ suit }{
     }
 
-    // 10, jack, queen, and king are worth 10 
-    return 10;
-}
-
-void printHandAndValue(Participant participant){
-    std::cout << participant.name << " hand: ";
-    for(Card card: participant.hand){
-        printCard(card);
+    std::string toString() const{
+        std::string string{};
+        string += toChar(m_rank);
+        string += toChar(m_suit);
+        return string;
     }
-    std::cout << '\n';
-    std::cout << "Score: " << participant.score << '\n';
-}
 
-int getHandValue(const std::vector<Card> hand){
-    int total{ 0 };
-    for(Card card: hand){
-        total += getCardValue(card);
+    void print() const{
+        std::cout << toString() << ' ';
     }
-    return total;
-}
 
-Card drawCard(const deck_t& shuffledDeck){
-    static int nextCard{ 0 };
-    return shuffledDeck.at(nextCard++);
-}
+    int getValue() const{
+        int enumValue{ static_cast<int>(m_rank) };
+        if(enumValue<9){        
+            // 2-9 are worth their face value
+            return enumValue+2;
+        }
+        if(enumValue == static_cast<int>(Rank::ace)){
+            // ace is worth 11
+            return 11;
+        }
 
-Card drawCard(const deck_t& shuffledDeck, bool reset){
-    static int nextCard{ 0 };
-    if(reset){
-        nextCard = 0;
+        // 10, jack, queen, and king are worth 10 
+        return 10;
     }
-    return shuffledDeck.at(nextCard++);
-}
+};
 
-void drawCard(Participant& participant, const Card*& nextCardPtr){
-    std::cout << participant.name << " draws a card: ";
-    std::cout << toString(*nextCardPtr) << "\n";
-    auto& hand = participant.hand;
-    auto handSize{ hand.size() };
-    hand.resize(handSize+1);
-    hand.at(handSize) = *nextCardPtr;
-    ++nextCardPtr;
-}
+class Deck{
+public:
+    using deck_t = std::array<Card, g_totalCardsInDeck>;
+    using arrayIndex_t = deck_t::size_type;
+private:
+    deck_t m_deck{};
+    arrayIndex_t m_cardIndex{};
+public:
+    Deck(){
+        arrayIndex_t cardNumber{ 0 };
+        const int maxRanks{ static_cast<int>(Card::Rank::max_ranks) };
+        for(int s{ 0 }; s<static_cast<int>(Card::Suit::max_suits); ++s){
+            for(int r{ 0 }; r<maxRanks; ++r){
+                m_deck.at(cardNumber) = Card{static_cast<Card::Rank>(r), static_cast<Card::Suit>(s)};
+                ++cardNumber;
+            }
+        }
 
-void performPlayerTurn(Participant& player, const Card*& nextCardPtr){
+        shuffle();  // We have no use for an ordered deck
+    }
+
+    void print(){
+        for(Card card : m_deck){
+            card.print();
+        }
+
+        std::cout << '\n';
+    }
+
+    void shuffle(){
+        std::shuffle(m_deck.begin(), m_deck.end(), Random::mt);
+        m_cardIndex = 0;
+    }
+
+    const Card& dealCard(){
+        return m_deck.at(m_cardIndex++);
+    }
+
+};
+
+class Participant{
+private:
+    std::string m_name{};
+    int m_score{};
+    std::vector<Card> m_hand{};
+public:
+    Participant(const std::string& name) : m_name{ name }{};
+
+    int drawCard(Deck& deck){
+        Card card{ deck.dealCard() };
+        std::cout << m_name << " draws a card: " << card.toString() << '\n';
+        m_hand.push_back(card);
+        int value{ card.getValue() };
+        m_score += value;
+        return value;
+    }
+
+    std::string_view getName() const { return m_name; }
+    int getScore() const { return m_score; }
+    bool isBust() const { return m_score > g_targetScore; }
+
+    void printHandAndValue() const {
+        std::cout << m_name << " hand: ";
+        for(Card card: m_hand){
+            card.print();
+        }
+        std::cout << '\n';
+        std::cout << "Score: " << m_score << '\n';
+    }
+};
+
+// Functions
+
+// return true if busted
+bool performPlayerTurn(Participant& player, Deck& deck){
     
-    std::cout << player.name << "'s turn\n";
+    std::cout << player.getName() << "'s turn\n";
 
     while(true){
         char res{ getFromUser<char>("Hit or Stand (h/s)? ") };
         std::cout << '\n';
         if(res == 's'){
-            break;
+            return false;
         } else if(res == 'h') {
-            player.score += getCardValue(*nextCardPtr); // Before draw, as draw moves pointer
-            drawCard(player, nextCardPtr);
-            printHandAndValue(player);
-            if(player.score > g_targetScore){
-                break;
+            player.drawCard(deck);
+            player.printHandAndValue();
+            if(player.isBust()){
+                return true;
             }
         }
     }
 }
 
-void performDealerTurn(Participant& dealer, const Card*& nextCardPtr, int playerScore){
+// return true if dealer busted
+bool performDealerTurn(Participant& dealer, Deck& deck, int playerScore){
 
-    std::cout << dealer.name << "'s turn\n";
+    std::cout << dealer.getName() << "'s turn\n";
 
-    while(dealer.score < playerScore){
+    while(dealer.getScore() < playerScore){
         //std::cout << "Dealer Hits\n";
-        dealer.score += getCardValue(*nextCardPtr); // Before draw, as draw moves pointer
-        drawCard(dealer, nextCardPtr);
+        dealer.drawCard(deck);
     }
 
-    if(dealer.score<=g_targetScore){
-        std::cout << dealer.name << " Stands\n";
+    if(!dealer.isBust()){
+        std::cout << dealer.getName() << " Stands\n";
     }
 
     std::cout << '\n';
-    printHandAndValue(dealer);
+    dealer.printHandAndValue();
+    return dealer.isBust();
 }
 
-EndState playBlackjack(const deck_t& shuffledDeck){
+EndState playBlackjack(){
 
-    auto nextCardPtr{ shuffledDeck.begin() };
+    Deck deck{};
 
     Participant dealer{"Dealer"};
     Participant player{"Player"};
 
     std::cout << "Welcome to Blackjack!\n";
-    drawCard(dealer, nextCardPtr);
-    drawCard(player, nextCardPtr);
-    drawCard(player, nextCardPtr);
-    dealer.score = getHandValue(dealer.hand);
-    player.score = getHandValue(player.hand);
-    if(player.score>g_targetScore){
+
+    dealer.drawCard(deck);
+    player.drawCard(deck);
+    player.drawCard(deck);
+    if(player.isBust()){        // Happens if 2 aces (as ace is only worth 11 in this version)
         std::cout << "Bust!" << '\n';
         return EndState::loss;
     }
     std::cout << '\n';
-    printHandAndValue(dealer);
+    dealer.printHandAndValue();
     std::cout << '\n';
-    printHandAndValue(player);
+    player.printHandAndValue();
     std::cout << '\n';
-    performPlayerTurn(player, nextCardPtr);
-    if(player.score>g_targetScore){
+    if(performPlayerTurn(player, deck)){
         std::cout << "Bust!" << '\n';
         return EndState::loss;
     }
-    performDealerTurn(dealer, nextCardPtr, player.score);
-    if(dealer.score>g_targetScore){
+    if(performDealerTurn(dealer, deck, player.getScore())){
         std::cout << "Bust!" << '\n';
         return EndState::win;
     }
 
-    if(player.score>dealer.score){
-        return EndState::win;
+    if(player.getScore()<dealer.getScore()){        
+        return EndState::loss;
     } 
-    if(player.score == dealer.score){
+    if(player.getScore() == dealer.getScore()){
         return EndState::tie;
     }
-    return EndState::loss;
+
+    // Normally dealer has either busted, won, or tied by this point, so shouldn't be possible
+
+    return EndState::win;
 }
 
 int main()
 {
-    deck_t deck{ createDeck() };
-    shuffleDeck(deck);
-    EndState endState{ playBlackjack(deck) };
+    EndState endState{ playBlackjack() };
 
     switch (endState)
     {
@@ -306,5 +316,6 @@ int main()
     default:
         break;
     }
+    
     return 0;
 }
